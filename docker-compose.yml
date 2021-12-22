@@ -1,0 +1,40 @@
+version: '3.3'
+
+networks:
+  web:
+    external: true
+
+volumes:
+  acme:
+
+services:
+  traefik:
+    image: ${TRAEFIK_IMAGE:-traefik}:${TRAEFIK_VERSION:-latest}
+    hostname: ${TRAEFIK_API_HOST}
+    restart: always
+
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traefik.rule=Host(`${TRAEFIK_API_HOST}`)
+      - traefik.http.routers.dashboard.entrypoints=websecure
+      - traefik.http.routers.traefik.tls
+      - traefik.http.services.traefik.loadbalancer.server.port=8080
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/traefik/etc/traefik:/etc/traefik:ro
+      - acme:/acme:rw
+        
+    environment:
+      - GODADDY_API_KEY=${GODADDY_API_KEY}
+      - GODADDY_API_SECRET=${GODADDY_API_SECRET}
+
+    expose:
+      - 8080
+
+    ports:
+      - 80:80
+      - 443:443
+
+    networks:
+      - web
